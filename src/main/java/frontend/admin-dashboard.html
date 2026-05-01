@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | QuizPlatform AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712;
+            color: #f8fafc;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-sidebar {
+            background: rgba(3, 7, 18, 0.6);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.4) !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+            outline: none;
+        }
+        select option { background-color: #0f172a; color: white; }
+
+        .btn-glow {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none !important;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-glow::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        .btn-glow:hover::before { left: 100%; }
+        .btn-glow:hover { box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5); transform: translateY(-2px); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .view-section:not(.hidden) { display: block; animation: fadeIn 0.5s ease-out forwards; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+
+        /* Overrides for JS injected text */
+        .text-gray-900, .text-gray-800 { color: #f8fafc !important; }
+        .text-gray-700 { color: #cbd5e1 !important; }
+        .text-gray-500, .text-gray-400 { color: #94a3b8 !important; }
+        .bg-gray-50 { background-color: rgba(255, 255, 255, 0.03) !important; border: none !important; }
+        .bg-white { background-color: transparent !important; }
+        .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.08) !important; }
+        .border-gray-200, .border-gray-300 { border-color: rgba(255, 255, 255, 0.1) !important; }
+        td, th { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .hover\:bg-gray-50:hover { background-color: rgba(255,255,255,0.06) !important; }
+        .text-indigo-600 { color: #818cf8 !important; }
+        .text-blue-600 { color: #60a5fa !important; }
+    </style>
+</head>
+<body class="antialiased flex h-screen overflow-hidden relative selection:bg-indigo-500/30">
+
+<canvas id="particleCanvas" class="absolute inset-0 z-0 opacity-80"></canvas>
+<div class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none z-0"></div>
+<div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none z-0"></div>
+
+<aside class="w-72 glass-sidebar text-white flex flex-col z-20 shadow-2xl relative">
+    <div class="p-8 border-b border-white/5 flex flex-col items-center">
+        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-[0_0_20px_rgba(99,102,241,0.4)] mb-4">
+            <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h2 class="text-xl font-extrabold tracking-tight">Admin<span class="text-indigo-400">Core</span></h2>
+        <p class="text-xs text-indigo-300/70 mt-1 font-mono bg-white/5 px-3 py-1 rounded-full border border-white/5" id="adminEmailDisplay">admin@example.com</p>
+    </div>
+
+    <nav class="flex-1 px-4 py-8 space-y-3">
+        <button onclick="switchView('quizzesView')" class="w-full flex items-center px-5 py-4 rounded-xl text-left font-bold transition-all bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]" id="nav-quizzes">
+            <i class="bi bi-cpu me-3 text-lg"></i> Manage Matrices
+        </button>
+        <button onclick="switchView('sessionsView')" class="w-full flex items-center px-5 py-4 rounded-xl text-left text-slate-400 hover:bg-white/5 hover:text-white transition-all font-semibold" id="nav-sessions">
+            <i class="bi bi-broadcast me-3 text-lg"></i> Live Sessions
+        </button>
+        <button onclick="switchView('resultsView')" class="w-full flex items-center px-5 py-4 rounded-xl text-left text-slate-400 hover:bg-white/5 hover:text-white transition-all font-semibold" id="nav-results">
+            <i class="bi bi-bar-chart-line me-3 text-lg"></i> Analytics
+        </button>
+    </nav>
+
+    <div class="p-6 border-t border-white/5">
+        <button onclick="logout()" class="w-full flex items-center justify-center px-4 py-3 text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 rounded-xl transition-all font-bold text-xs uppercase tracking-widest">
+            <i class="bi bi-power me-2"></i> Terminate Link
+        </button>
+    </div>
+</aside>
+
+<main class="flex-1 overflow-y-auto p-8 lg:p-12 relative z-10">
+    <div class="max-w-6xl mx-auto">
+
+        <div id="quizzesView" class="view-section">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-4xl font-extrabold tracking-tight text-white mb-1">Network Quizzes</h1>
+                    <p class="text-slate-400 text-sm font-medium">Configure evaluation protocols and matrices.</p>
+                </div>
+                <button onclick="document.getElementById('createQuizForm').classList.toggle('hidden')" class="btn-glow px-6 py-3 rounded-xl shadow font-bold tracking-wide flex items-center text-sm">
+                    <i class="bi bi-plus-lg me-2"></i> Initialize New
+                </button>
+            </div>
+
+            <div id="createQuizForm" class="hidden glass-card p-8 rounded-2xl mb-8 border-indigo-500/30 animate-[fadeIn_0.3s_ease-out]">
+                <h3 class="font-bold text-lg mb-6 text-white flex items-center"><i class="bi bi-gear-fill text-indigo-400 me-2"></i> Creation Protocol</h3>
+                <form id="newQuizForm" class="flex flex-col md:flex-row gap-5 items-end">
+                    <div class="flex-1 w-full">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Quiz Title</label>
+                        <input type="text" id="quizTitle" required class="glass-input w-full p-3.5 rounded-xl">
+                    </div>
+                    <div class="flex-1 w-full">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Topic Matrix</label>
+                        <input type="text" id="quizTopic" required class="glass-input w-full p-3.5 rounded-xl">
+                    </div>
+                    <div class="w-full md:w-32">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mins</label>
+                        <input type="number" id="quizDuration" required class="glass-input w-full p-3.5 rounded-xl text-center">
+                    </div>
+                    <button type="submit" class="btn-glow px-8 py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs w-full md:w-auto">Commit</button>
+                </form>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden">
+                <table class="min-w-full divide-y divide-white/10">
+                    <thead class="bg-white/5">
+                    <tr>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em]">System ID</th>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em]">Title</th>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em]">Parameters</th>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em]">Status</th>
+                        <th class="px-8 py-5 text-right text-xs font-black text-slate-300 uppercase tracking-[0.15em]">Controls</th>
+                    </tr>
+                    </thead>
+                    <tbody id="quizzesTableBody" class="divide-y divide-white/5">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="manageQuestionsView" class="view-section hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+                <div>
+                    <button onclick="switchView('quizzesView')" class="text-indigo-400 hover:text-indigo-300 text-xs font-bold uppercase tracking-widest mb-4 flex items-center transition-colors">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Fleet
+                    </button>
+                    <h1 class="text-4xl font-extrabold text-white tracking-tight" id="currentQuizTitle">Protocol Details</h1>
+                    <p class="text-slate-400 text-xs mt-2 font-mono uppercase">Reference: <span id="currentQuizIdDisplay" class="text-indigo-300"></span></p>
+                </div>
+                <button onclick="document.getElementById('addQuestionFormContainer').classList.toggle('hidden')" class="btn-glow px-6 py-3 rounded-xl font-bold flex items-center text-sm shadow">
+                    <i class="bi bi-node-plus-fill me-2"></i> Add Data Node
+                </button>
+            </div>
+
+            <div id="addQuestionFormContainer" class="hidden glass-card p-8 rounded-2xl mb-8 animate-[fadeIn_0.3s_ease-out]">
+                <h3 class="font-bold text-lg mb-6 text-indigo-400 border-b border-white/10 pb-4"><i class="bi bi-code-square me-2"></i> Node Configuration</h3>
+                <form id="addQuestionForm" class="space-y-6">
+                    <input type="hidden" id="q_quizId">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Question Content</label>
+                        <textarea id="q_text" required class="glass-input w-full rounded-xl p-4" rows="2"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="text" id="q_opt1" required class="glass-input w-full rounded-xl p-3.5" placeholder="Option 1">
+                        <input type="text" id="q_opt2" required class="glass-input w-full rounded-xl p-3.5" placeholder="Option 2">
+                        <input type="text" id="q_opt3" required class="glass-input w-full rounded-xl p-3.5" placeholder="Option 3">
+                        <input type="text" id="q_opt4" required class="glass-input w-full rounded-xl p-3.5" placeholder="Option 4">
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-5">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Valid Index</label>
+                            <select id="q_correct" required class="glass-input w-full rounded-xl p-3.5 appearance-none cursor-pointer">
+                                <option value="1">Option 1</option>
+                                <option value="2">Option 2</option>
+                                <option value="3">Option 3</option>
+                                <option value="4">Option 4</option>
+                            </select>
+                        </div>
+                        <div class="w-full sm:w-32">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Weight</label>
+                            <input type="number" id="q_marks" value="1" required class="glass-input w-full rounded-xl p-3.5 text-center">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-glow text-white px-8 py-4 rounded-xl font-bold uppercase tracking-wider text-xs w-full shadow-lg mt-4">Inject Question Data</button>
+                </form>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 lg:p-8">
+                <h4 class="font-black text-[10px] uppercase tracking-[0.25em] text-slate-500 mb-6 border-b border-white/5 pb-3">Active Data Nodes</h4>
+                <div id="questionsList" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                </div>
+            </div>
+        </div>
+
+        <div id="sessionsView" class="view-section hidden">
+            <h1 class="text-4xl font-extrabold tracking-tight text-white mb-8">Session Control</h1>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                <div class="glass-card p-8 rounded-2xl">
+                    <h3 class="font-bold mb-6 text-indigo-400 flex items-center"><i class="bi bi-hdd-network-fill me-2"></i> Deploy Instance</h3>
+                    <form id="createSessionForm" class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Target Quiz ID</label>
+                            <input type="text" id="sessionQuizId" required class="glass-input w-full rounded-xl p-3.5">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Deployment Alias</label>
+                            <input type="text" id="sessionName" required class="glass-input w-full rounded-xl p-3.5" placeholder="e.g. Protocol Alpha">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Start T-Zero</label>
+                                <input type="datetime-local" id="sessionStartTime" required class="glass-input w-full rounded-xl p-3 text-sm" style="color-scheme: dark;">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">End Horizon</label>
+                                <input type="datetime-local" id="sessionEndTime" required class="glass-input w-full rounded-xl p-3 text-sm" style="color-scheme: dark;">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-glow text-white px-4 py-4 rounded-xl font-bold uppercase tracking-wider text-xs w-full mt-4">Authorize Sequence</button>
+                    </form>
+                </div>
+
+                <div class="glass-card p-8 rounded-2xl border-purple-500/20">
+                    <h3 class="font-bold mb-6 text-purple-400 flex items-center"><i class="bi bi-toggles me-2"></i> Override Controls</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Active Instance ID</label>
+                            <input type="text" id="manageSessionId" placeholder="e.g. sess_12345" class="glass-input w-full rounded-xl p-4 text-center tracking-widest font-mono">
+                        </div>
+                        <div class="flex gap-4">
+                            <button onclick="changeSessionState('start')" class="flex-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-4 py-4 rounded-xl hover:bg-indigo-600 hover:text-white transition-all font-bold uppercase text-xs tracking-wider shadow">
+                                <i class="bi bi-play-fill me-1"></i> Force Start
+                            </button>
+                            <button onclick="changeSessionState('end')" class="flex-1 bg-red-500/10 text-red-400 border border-red-500/30 px-4 py-4 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold uppercase text-xs tracking-wider shadow">
+                                <i class="bi bi-stop-fill me-1"></i> Terminate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsView" class="view-section hidden">
+            <h1 class="text-4xl font-extrabold tracking-tight text-white mb-8">Performance Metrics</h1>
+
+            <div class="glass-card p-6 rounded-2xl max-w-2xl mb-8 flex gap-4 items-end bg-gradient-to-r from-white/5 to-transparent border-l-4 border-l-indigo-500">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Extract Data for Session ID</label>
+                    <input type="text" id="resultSessionId" placeholder="Enter Session Hash..." class="glass-input w-full rounded-xl p-3.5 font-mono">
+                </div>
+                <button onclick="fetchResults()" class="btn-glow text-white px-8 py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg">Scan</button>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden">
+                <table class="min-w-full divide-y divide-white/10">
+                    <thead class="bg-white/5">
+                    <tr>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em] w-24">Rank</th>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em]">Candidate Profile</th>
+                        <th class="px-8 py-5 text-left text-xs font-black text-slate-300 uppercase tracking-[0.15em]">Score Output</th>
+                    </tr>
+                    </thead>
+                    <tbody id="resultsTableBody" class="divide-y divide-white/5">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, particles;
+
+    let mouse = { x: null, y: null, radius: 150 };
+
+    window.addEventListener('mousemove', function(event) {
+        mouse.x = event.x; mouse.y = event.y;
+    });
+    window.addEventListener('mouseout', function() {
+        mouse.x = null; mouse.y = null;
+    });
+
+    function initCanvas() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        particles = [];
+        const particleCount = (width * height) / 12000;
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+    }
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * width; this.y = Math.random() * height;
+            this.size = Math.random() * 2 + 1; // Slightly larger particles
+            this.speedX = Math.random() * 1 - 0.5; this.speedY = Math.random() * 1 - 0.5;
+            // BRIGHTER Particles (Higher Opacity Base)
+            this.color = `rgba(${Math.random() > 0.5 ? '99,102,241' : '168,85,247'}, ${Math.random() * 0.4 + 0.5})`;
+        }
+        update() {
+            this.x += this.speedX; this.y += this.speedY;
+            if (this.x > width || this.x < 0) this.speedX *= -1;
+            if (this.y > height || this.y < 0) this.speedY *= -1;
+
+            if (mouse.x != null) {
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    const forceDirectionX = dx / distance; const forceDirectionY = dy / distance;
+                    const force = (mouse.radius - distance) / mouse.radius;
+                    this.x -= forceDirectionX * force * 2; this.y -= forceDirectionY * force * 2;
+                }
+            }
+        }
+        draw() {
+            ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update(); particles[i].draw();
+            for (let j = i; j < particles.length; j++) {
+                let dx = particles[i].x - particles[j].x; let dy = particles[i].y - particles[j].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 120) {
+                    ctx.beginPath();
+                    // BRIGHTER Connecting Lines (Multiplier increased from 0.15 to 0.45)
+                    ctx.strokeStyle = `rgba(168, 85, 247, ${0.45 * (1 - distance/120)})`;
+                    ctx.lineWidth = 1.5; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+    window.addEventListener('resize', initCanvas);
+    initCanvas(); animate();
+</script>
+
+<script src="js/api.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
